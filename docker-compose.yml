@@ -1,0 +1,51 @@
+version: "1.1"
+
+services:
+  db:
+    container_name: db
+    image: postgres:14.5
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "post"
+    ports:
+      - "5432:5432"
+    volumes:
+      - post:/var/lib/postgresql/data
+      - ./data/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+      - ./data/data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    networks:
+      - post
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: postgres
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - post
+  post-service:
+    container_name: post-service
+    image: docker.io/library/post-service
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASESERVER_PORT: "5432"
+    depends_on:
+      db:
+        condition: service_started
+    networks:
+      - post
+networks:
+  post:
+    driver: bridge
+volumes:
+  post:
+    driver: local
+  pgadmin-data:
+    driver: local
